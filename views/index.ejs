@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel="stylesheet" type="text/css" href="/stylesheets/bootstrap.min.css">
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+	<script src="http://code.highcharts.com/highcharts.js"></script>
+	<script src="http://code.highcharts.com/modules/exporting.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function(){
+
+
+
+			$(function () {
+
+				io = io.connect();
+
+				var male = $("#male");
+				var female = $("#female");
+
+
+				
+
+				$("body").on("click", "#male", function(){
+
+					var data = {
+						"male": male.attr('data-vote'),
+						"female": female.attr('data-vote')
+					}
+
+					data["male"]++;
+					io.emit('cast vote', {'vote': "male", "count": data});
+				});
+
+				$("body").on("click", "#female", function(){
+					var data = {
+						"male": male.attr('data-vote'),
+						"female": female.attr('data-vote')
+					}
+
+					data["female"]++;
+					io.emit('cast vote', {'vote': "female", "count": data});
+				});
+
+				io.on('result', function(data) {
+					count_male = data.votes.male * data.total / 100;
+					count_female = data.votes.female * data.total / 100;
+					male.attr('data-vote', count_male.toFixed(2));
+					female.attr('data-vote',count_female.toFixed(2));
+				    $('#container').highcharts({
+				        chart: {
+				            plotBackgroundColor: null,
+				            plotBorderWidth: null,
+				            plotShadow: false
+				        },
+				        title: {
+				            text: 'Male and Female Voters'
+				        },
+				        tooltip: {
+				    	    pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+				        },
+				        plotOptions: {
+				            pie: {
+				                allowPointSelect: true,
+				                cursor: 'pointer',
+				                dataLabels: {
+				                    enabled: true,
+				                    color: '#000000',
+				                    connectorColor: '#000000',
+				                    format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+				                }
+				            }
+				        },
+				        series: [{
+				            type: 'pie',
+				            name: 'Browser share',
+				            data: [
+				                ['Male',   data.votes.male],
+				                {
+				                    name: 'Female',
+				                    y: data.votes.female,
+				                    sliced: true,
+				                    selected: true
+				                },
+				            ]
+				        }]
+				    });
+				});
+
+
+			});			
+		});
+
+	</script>
+  </head>
+  <body>
+    <h1><%= title %></h1>
+    <p>Select your Gender</p>
+    <button id="male" type="button" class="btn btn-primary" data-vote="0">Male</button> or <button id="female" type="button" class="btn btn-success" data-vote="0">Female</button>
+
+	<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+  </body>
+</html>
